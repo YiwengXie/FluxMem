@@ -1,0 +1,22 @@
+# python generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# venv
+.venv
+
+# artifacts / local outputs
+eval_results/
+results/
+logs/
+tmp/
+.vscode
+wandb/
+qwen-vl-finetune/checkpoints/
+qwen-vl-finetune/wandb/
+qwen-vl-finetune/test_videos/
+evaluation/lmms-eval/logs/

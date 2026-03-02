@@ -1,0 +1,21 @@
+[project]
+name = "qwen2-5-vl-fluxmem"
+version = "0.0.0"
+description = "FluxMem patched Qwen2.5-VL model"
+requires-python = ">=3.10"
+dependencies = [
+    "torch==2.6.0",
+    "torchvision==0.21.0",
+    "deepspeed==0.16.4",
+    "triton==3.2.0",
+    "accelerate==1.4.0",
+    "torchcodec==0.2",
+    "datasets==2.16.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+packages = ["src/qwen2_5_vl_fluxmem"]

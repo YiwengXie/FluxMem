@@ -1,0 +1,27 @@
+[project]
+name = "qwen-vl-finetune-fluxmem"
+version = "0.0.0"
+description = "Training scripts and configs for FluxMem Qwen2.5-VL"
+requires-python = ">=3.10"
+dependencies = [
+    "qwen2-5-vl-fluxmem",
+    "qwen-vl-utils-fluxmem",
+    "transformers==4.50.0",
+    "deepspeed==0.16.4",
+    "accelerate==1.4.0",
+    "datasets==2.16.1",
+]
+
+[project.optional-dependencies]
+eval = [
+    "ffmpeg-python==0.2.0",
+    "moviepy==1.0.3",
+]
+train = ["wandb"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build]
+packages = ["qwenvl"]
