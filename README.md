@@ -17,7 +17,7 @@
 
 <p align="center">
   🌐 <a href="https://yiwengxie.github.io/FluxMem/" target="_blank"><b>Homepage</b></a> &nbsp;|&nbsp; 
-  📄 <a href="https://arxiv.org/abs/ARXIV_ID" target="_blank"><b>Paper</b></a><br>
+  📄 <a href="https://arxiv.org/abs/2603.02096" target="_blank"><b>Paper</b></a><br>
 </p>
 
 
