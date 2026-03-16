@@ -152,6 +152,18 @@ bash scripts/sft.sh
 - Datasets: You can download the evaluation benchmarks from the corresponding link: [StreamingBench](https://huggingface.co/datasets/mjuicem/StreamingBench); [OVO-Bench](https://huggingface.co/datasets/JoeLeelyf/OVO-Bench).
 
 ## <img src="assets/icons/visualizations.png" width="22" alt="Visualizations icon" style="vertical-align:middle; position: relative; top: -0.2em;"> Visualizations
+To visualize which tokens FluxMem drops on a specific video:
+```bash
+python evaluation/visualize_fluxmem_token_drops.py \
+    --video_path PATH_TO_VIDEO \
+    --output_dir vis_outputs/ \
+    --ckpt_path Qwen/Qwen2.5-VL-7B-Instruct \
+    --fps 1 \
+    --max_frames 256 \
+    --short_frames 8 \
+    --medium_frames 64
+```
+
 ![Token Flow Visualization 1](assets/images/visualize-1.png)
 ![Token Flow Visualization 2](assets/images/visualize-2.png)
 

@@ -14,6 +14,7 @@ eval_results/
 results/
 logs/
 tmp/
+vis_outputs/
 .vscode
 wandb/
 qwen-vl-finetune/checkpoints/

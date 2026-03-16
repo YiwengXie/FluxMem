@@ -1946,7 +1946,6 @@ class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMi
             cache_position=cache_position,
             # Memory (streaming only)
             video_grid_thw=video_grid_thw,
-            save_path=save_path,
             use_fluxmem=use_fluxmem,
             short_frames=short_frames,
             medium_frames=medium_frames,
@@ -2037,7 +2036,6 @@ class Qwen2_5_VLForConditionalGeneration(Qwen2_5_VLPreTrainedModel, GenerationMi
             video_grid_thw=video_grid_thw,
             second_per_grid_ts=second_per_grid_ts,
             use_cache=use_cache,
-            save_path=save_path,
             **kwargs,
         )
 

@@ -5,6 +5,7 @@ FluxMem streaming memory for Qwen2.5-VL:
 - long-term per-frame clustering to keep anchors only.
 """
 
+import json
 from typing import Optional, Tuple, List
 
 import torch
@@ -39,6 +40,7 @@ class FluxMem:
         self.vision_start_token_id = vision_start_token_id
         self.vision_end_token_id = vision_end_token_id
         self.direct_drop_sim_threshold = float(direct_drop_sim_threshold)
+        self.drop_vis_path: str | None = None
 
     @staticmethod
     def _neighbor_offsets(device: torch.device, include_center: bool) -> torch.Tensor:
@@ -58,6 +60,20 @@ class FluxMem:
         return max_h + 1, max_w + 1
 
     @staticmethod
+    def _localize_spatial_ids(
+        visual_indices: torch.Tensor,
+        height_ids: torch.Tensor,
+        width_ids: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        if visual_indices.numel() == 0:
+            return height_ids, width_ids
+        height_ids = height_ids.clone()
+        width_ids = width_ids.clone()
+        height_ids = height_ids - height_ids[visual_indices].min()
+        width_ids = width_ids - width_ids[visual_indices].min()
+        return height_ids, width_ids
+
+    @staticmethod
     def _pack_sample(
         hidden_states: torch.Tensor,
         position_ids: torch.Tensor,
@@ -71,6 +87,38 @@ class FluxMem:
             "pos_emb1": position_embeddings[0][:, batch_index, kept_indices],
             "pos_emb2": position_embeddings[1][:, batch_index, kept_indices],
         }
+
+    @staticmethod
+    def _collect_drop_records(
+        batch_index: int,
+        frames: List[int],
+        frame_to_indices: dict[int, torch.Tensor],
+        height_ids: torch.Tensor,
+        width_ids: torch.Tensor,
+        keep_mask: torch.Tensor,
+        grid_hw: tuple[int, int] | None,
+    ) -> List[dict]:
+        records = []
+        for frame_idx, frame_id in enumerate(frames):
+            frame_indices = frame_to_indices.get(frame_id)
+            if frame_indices is None or frame_indices.numel() == 0:
+                continue
+            dropped_indices = frame_indices[~keep_mask[frame_indices]]
+            if dropped_indices.numel() > 0:
+                coords = torch.stack([height_ids[dropped_indices], width_ids[dropped_indices]], dim=1)
+                drop_coords = coords.detach().cpu().tolist()
+            else:
+                drop_coords = []
+            records.append(
+                {
+                    "batch_idx": int(batch_index),
+                    "frame_id": int(frame_id),
+                    "frame_idx": int(frame_idx),
+                    "grid_hw": [int(grid_hw[0]), int(grid_hw[1])] if grid_hw is not None else None,
+                    "final_drop": drop_coords,
+                }
+            )
+        return records
 
     @staticmethod
     def _otsu_threshold(
@@ -300,9 +348,12 @@ class FluxMem:
                 kept_indices_list.append(kept_indices)
                 continue
 
+            drop_vis_path = self.drop_vis_path
+
             time_ids = position_ids[0, batch_index]
             height_ids = position_ids[1, batch_index].to(torch.long)
             width_ids = position_ids[2, batch_index].to(torch.long)
+            height_ids, width_ids = self._localize_spatial_ids(visual_indices, height_ids, width_ids)
             grid_hw = self._compute_grid_hw(visual_indices, height_ids, width_ids)
             frames, frame_to_indices, frame_grids = self._frame_grids(
                 visual_indices=visual_indices,
@@ -376,6 +427,19 @@ class FluxMem:
 
             for frame_id in short_term_buffer:
                 keep_mask[frame_to_indices[frame_id]] = True
+
+            if drop_vis_path:
+                with open(drop_vis_path, "a") as f_out:
+                    for rec in self._collect_drop_records(
+                        batch_index=batch_index,
+                        frames=frames,
+                        frame_to_indices=frame_to_indices,
+                        height_ids=height_ids,
+                        width_ids=width_ids,
+                        keep_mask=keep_mask,
+                        grid_hw=grid_hw,
+                    ):
+                        f_out.write(json.dumps(rec) + "\n")
 
             kept_indices = keep_mask.nonzero(as_tuple=True)[0]
             processed_samples.append(
@@ -523,4 +587,5 @@ class FluxMem:
             local_keep = torch.ones(num_nodes, dtype=torch.bool, device=device)
             local_keep[merge_clusters[inverse]] = False
             local_keep[anchor_local] = True
-            keep_mask[kept_frame_indices[~local_keep]] = False
+            dropped_indices = kept_frame_indices[~local_keep]
+            keep_mask[dropped_indices] = False
